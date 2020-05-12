@@ -1,17 +1,14 @@
 {
-  "name": "ts-linq",
-  "version": "0.0.0",
-  "description": "ts-linq",
-  "main": "app.js",
-  "author": {
-    "name": ""
-  },
+  "name": "iterator",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
   "scripts": {
-    "build": "tsc --build",
-    "clean": "tsc --build --clean"
+    "start": "./node_modules/.bin/ts-node app.ts"
   },
-  "devDependencies": {
-    "@types/node": "^8.0.14",
-    "typescript": "^3.2.2"
+  "dependencies": {
+    "node-ts": "^5.0.3",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
   }
 }
