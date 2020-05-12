@@ -35,8 +35,19 @@ class ListModel<T extends keyof data_container, E extends data_container[T]> {
 		this.at += 1;
 		return val;
 	};
-	iter = () => new Iterator2(this.next)
+	iterModel = () => new Iterator2Model(this.next)
 
+
+
+	iter = () => new Iterator2(this.next)
+}
+
+class Iterator2Model<T extends keyof data_container, E extends data_container[T]> {
+	value: () => E | null;
+
+	constructor(val: () => E | null) {
+		this.value = val;
+	}
 }
 
 class List<T> {
@@ -54,8 +65,6 @@ class List<T> {
 	iter = () => new Iterator2(this.next)
 
 }
-
-
 class Iterator2<T> {
 	value: () => T | null;
 
