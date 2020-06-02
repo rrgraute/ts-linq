@@ -11,6 +11,7 @@ const data = {
 	"students": [{ name: "ryan", course: 2 }]
 }
 
+
 type joined<Left extends keyof data_container, Right extends keyof data_container> = {
 	left: keyof data_container[Left],
 	right: keyof data_container[Right]
@@ -21,21 +22,39 @@ const test: joined<"courses", "students"> = {
 	right: "course"
 }
 
+type Joins = {
+	[v in keyof data_container]: {
+		[x in keyof data_container]: joined<x, v>
+	}
+}
+const joins: Joins = {
+	students: {
+		students: { left: "course", right: "course" },
+		courses: test
+	},
+	courses: {
+		students: { left: "course", right: "id" },
+		courses: { left: "id", right: "id" }
+	}
+}
+
 
 
 class ListModel<T extends keyof data_container, E extends data_container[T]> {
 	reference: Array<E>
 	at: number;
+	name: T
 	constructor(name: T) {
 		this.reference = data[name] as [E]
 		this.at = 0;
+		this.name = name;
 	}
 	next = () => {
 		let val = this.reference[this.at];
 		this.at += 1;
 		return val;
 	};
-	iterModel = () => new Iterator2Model(this.next)
+	iterModel = () => new Iterator2Model(this.next, this.name)
 
 
 
@@ -44,20 +63,52 @@ class ListModel<T extends keyof data_container, E extends data_container[T]> {
 
 class Iterator2Model<T extends keyof data_container, E extends data_container[T]> {
 	value: () => E | null;
-
-	constructor(val: () => E | null) {
+	name: T;
+	constructor(val: () => E | null, name: T) {
 		this.value = val;
+		this.name = name;
 	}
 
 	where = (func: (_: E) => boolean) =>
 		new Iterator2Model(() => {
-			while(true) {
+			while (true) {
 				const val = this.value();
 				if (val == undefined || func(val)) {
 					return val;
 				}
 			}
-		})
+		}, this.name)
+
+	Include<X extends keyof data_container>(
+		table_to_join: X,
+		fun: (v: Iterator2Model<X, data_container[X]>) => Iterator2Model<X, data_container[X]>
+	) {
+		const next = () => {
+			const next = this.value();
+
+			const z = {
+				[table_to_join]: fun(new ListModel(table_to_join).iterModel().where(p => {
+					const keys = joins[this.name][table_to_join];
+					return next[keys.left] == p[keys.right]
+				})).toList(),
+				...next
+			}
+			return z
+		}
+		return new Iterator2Model(next, this.name)
+	}
+
+	toList = (): Array<E> => {
+		let list: E[] = [];
+		while (true) {
+			let v = this.value();
+			if (v) {
+				list.push(v)
+			} else {
+				return list
+			}
+		}
+	}
 }
 
 class List<T> {
@@ -165,7 +216,9 @@ class Iterator2<T> {
     };*/
 }
 
-console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
+//console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
+console.debug(new ListModel("courses").iterModel().Include("students", (v) => v).value())
+
 
 /*
 new List([
