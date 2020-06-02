@@ -72,11 +72,11 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 		this.last_filter = display;
 	}
 
-	Select<C2 extends keyof E>(...c: Array<C2>): Iterator2Model<T, E, typeof c[number]> {
+	Select<C2 extends keyof E>(...c: C2[]): Iterator2Model<T, E, { [x in typeof c[number]]: Array<C2>[number] }> {
 		return new Iterator2Model(this.value, this.name, v => {
-			const x: any = {};
-			c.forEach(z => x[z] = v[z]);
-			return x
+			let x: Partial<{ [x in typeof c[number]]: Array<C2>[number] }> = {};
+			c.forEach(z => x = { ...x, [z]: v[z] });
+			return x as { [x in typeof c[number]]: Array<C2>[number] }
 		})
 	}
 
@@ -93,8 +93,8 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 
 	Include<X extends keyof data_container, Y>(
 		table_to_join: X,
-		fun: (v: Iterator2Model<X, data_container[X], Y>) => Iterator2Model<X, data_container[X], Y>
-	) {
+		fun: (v: Iterator2Model<X, data_container[X], data_container[X]>) => Iterator2Model<X, data_container[X], Y>
+	): Iterator2Model<T, E, { [_ in X]: Y[] } & V> {
 		const next = () => {
 			const next = this.value();
 			if (!next) {
@@ -109,15 +109,46 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 			}
 			return z
 		}
-		return new Iterator2Model(next, this.name, this.last_filter)
+		return new Iterator2Model(next, this.name, (current) => {
+			let basic = this.last_filter(current);
+			console.log(basic)
+			let final = { [table_to_join]: current[table_to_join], ...basic };
+			console.log(final)
+			let final2 = final as V & { [_ in X] }
+			console.log(final2)
+			return final2;
+		})
 	}
+
+	forEach = (func: (_: V) => void) => {
+		while (true) {
+			const next = this.value();
+			if (next) {
+				const v = this.last_filter(next);
+				func(v);
+			} else {
+				break;
+			}
+		}
+	};
+	inspect = (func: (_: E) => void) =>
+		new Iterator2Model(() => {
+			let obj = this.value();
+			if (obj == undefined) {
+				return undefined;
+			} else {
+				func(obj);
+				return obj;
+			}
+		}, this.name, this.last_filter);
 
 	toList = (): Array<V> => {
 		let list: V[] = [];
 		while (true) {
 			const v = this.value();
 			if (v) {
-				list.push(this.last_filter(v))
+				let basic = this.last_filter(v);
+				list.push(basic)
 			} else {
 				return list
 			}
@@ -233,14 +264,13 @@ class Iterator2<T> {
 //console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
 new ListModel("courses")
 	.iterModel()
+	.Select("name")
 	.Include(
 		"students",
-		(v) => v.Select("name")
-		//v.Select("name")
+		(v) => v.Where(v => v.name == "a").Select("name")
 	)
-	.toList()
 	.forEach(
-		v => console.log(v)
+		v => console.log(v.students)
 	)
 
 
