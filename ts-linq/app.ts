@@ -54,22 +54,31 @@ class ListModel<T extends keyof data_container, E extends data_container[T]> {
 		this.at += 1;
 		return val;
 	};
-	iterModel = () => new Iterator2Model(this.next, this.name)
+	iterModel = () => new Iterator2Model(this.next, this.name, (v) => v)
 
 
 
 	iter = () => new Iterator2(this.next)
 }
 
-class Iterator2Model<T extends keyof data_container, E extends data_container[T]> {
+class Iterator2Model<T extends keyof data_container, E extends data_container[T], V = data_container[T]> {
 	value: () => E | null;
 	name: T;
-	constructor(val: () => E | null, name: T) {
+	last_filter: (v: E | null) => V;
+
+	constructor(val: () => E | null, name: T, display: (v: E | null) => V) {
 		this.value = val;
 		this.name = name;
+		this.last_filter = display;
 	}
-	// @ts-ignore
-	Select<C2 extends keyof E>(...c: Array<C2>): Iterator2Model<T, Pick<E, typeof c[number]>> { return new Iterator2Model(this.value, this.name) }
+
+	Select<C2 extends keyof E>(...c: Array<C2>): Iterator2Model<T, E, typeof c[number]> {
+		return new Iterator2Model(this.value, this.name, v => {
+			const x: any = {};
+			c.forEach(z => x[z] = v[z]);
+			return x
+		})
+	}
 
 	Where(func: (_: E) => boolean) {
 		return new Iterator2Model(() => {
@@ -79,12 +88,12 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 					return val;
 				}
 			}
-		}, this.name)
+		}, this.name, this.last_filter)
 	}
 
-	Include<X extends keyof data_container>(
+	Include<X extends keyof data_container, Y>(
 		table_to_join: X,
-		fun: (v: Iterator2Model<X, data_container[X]>) => Iterator2Model<X, data_container[X]>
+		fun: (v: Iterator2Model<X, data_container[X], Y>) => Iterator2Model<X, data_container[X], Y>
 	) {
 		const next = () => {
 			const next = this.value();
@@ -100,15 +109,15 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 			}
 			return z
 		}
-		return new Iterator2Model(next, this.name)
+		return new Iterator2Model(next, this.name, this.last_filter)
 	}
 
-	toList = (): Array<E> => {
-		let list: E[] = [];
+	toList = (): Array<V> => {
+		let list: V[] = [];
 		while (true) {
 			const v = this.value();
 			if (v) {
-				list.push(v)
+				list.push(this.last_filter(v))
 			} else {
 				return list
 			}
@@ -222,7 +231,17 @@ class Iterator2<T> {
 }
 
 //console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
-new ListModel("courses").iterModel().Include("students", (v) => v).toList().forEach(v => console.log(v))
+new ListModel("courses")
+	.iterModel()
+	.Include(
+		"students",
+		(v) => v.Select("name")
+		//v.Select("name")
+	)
+	.toList()
+	.forEach(
+		v => console.log(v)
+	)
 
 
 /*
