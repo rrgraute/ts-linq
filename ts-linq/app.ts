@@ -1,14 +1,16 @@
 type course = { name: string, id: number }
-type student = { name: string, course: number }
+type student = { id: number, name: string }
+type courseStudent = { student_id: number, course_id: number }
 
-type data_container = { "courses": course, "students": student }
+type data_container = { "courses": course, "students": student, "courseStudent": courseStudent }
 
 type test<T extends keyof data_container & string, E extends data_container[T]> = Map<T, E>;
 
 
 const data = {
-	"courses": [{ name: "awesome", id: 2 }, { name: "test2", id: 2 }, { name: "awesome2", id: 1 }],
-	"students": [{ name: "ryan", course: 2 }, { name: "casper", course: 2 }]
+	"courses": [{ name: "awesome", id: 2 }, { name: "test2", id: 3 }, { name: "awesome2", id: 1 }],
+	"students": [{ name: "ryan", id: 1 }, { name: "casper", id: 2 }, { name: "Tim", id: 3 }],
+	"courseStudent": [{ student_id: 2, course_id: 2 }, { student_id: 3, course_id: 1 }, { student_id: 1, course_id: 3 }, { student_id: 3, course_id: 2 }]
 }
 
 
@@ -17,35 +19,47 @@ type joined<Left extends keyof data_container, Right extends keyof data_containe
 	right: keyof data_container[Right]
 }
 
-const test: joined<"courses", "students"> = {
-	left: "id",
-	right: "course"
+const test: joined<"courseStudent", "students"> = {
+	left: "student_id",
+	right: "id"
 }
 
 type Joins = {
-	[v in keyof data_container]: {
-		[x in keyof data_container]: joined<x, v>
+	[v in keyof Partial<data_container>]: {
+		[x in keyof Partial<data_container>]: joined<x, v>
 	}
 }
-const joins: Joins = {
-	students: {
-		students: { left: "course", right: "course" },
-		courses: test
+
+type TestJoin = {
+	"students": {
+		"courseStudent": { left: "student_id", right: "id" }
 	},
-	courses: {
-		students: { left: "course", right: "id" },
-		courses: { left: "id", right: "id" }
+	"courseStudent": { "students": { left: "id", right: "student_id" } }
+	"courses": {
+		"courseStudent": { left: "course_id", right: "id" }
+	}
+}
+
+const joins: TestJoin & Joins = {
+	"students": {
+		"courseStudent": { left: "student_id", right: "id" }
+	},
+	"courseStudent": {
+		"students": { left: "id", right: "student_id" }
+	},
+	"courses": {
+		"courseStudent": { left: "course_id", right: "id" }
 	}
 }
 
 
 
-class ListModel<T extends keyof data_container, E extends data_container[T]> {
+class ListModel<T extends keyof data_container & keyof TestJoin, E extends data_container[T]> {
 	reference: Array<E>
 	at: number;
 	name: T
 	constructor(name: T) {
-		this.reference = data[name] as [E]
+		this.reference = data[name] as unknown as [E]
 		this.at = 0;
 		this.name = name;
 	}
@@ -54,17 +68,14 @@ class ListModel<T extends keyof data_container, E extends data_container[T]> {
 		this.at += 1;
 		return val;
 	};
-	iterModel = () => new Iterator2Model(this.next, this.name, (v) => v)
-
-
-
-	iter = () => new Iterator2(this.next)
+	iterModel = () => new Iterator2(this.next, this.name, (v) => v)
 }
 
-class Iterator2Model<T extends keyof data_container, E extends data_container[T], V = data_container[T]> {
-	value: () => E | null;
-	name: T;
-	last_filter: (v: E | null) => V;
+
+class Iterator2<T extends keyof data_container & keyof TestJoin, E extends data_container[T], V = data_container[T]> {
+	private value: () => E | null;
+	private name: T;
+	private last_filter: (v: E | null) => V;
 
 	constructor(val: () => E | null, name: T, display: (v: E | null) => V) {
 		this.value = val;
@@ -72,16 +83,20 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 		this.last_filter = display;
 	}
 
-	Select<C2 extends keyof E>(...c: C2[]): Iterator2Model<T, E, { [x in typeof c[number]]: Array<C2>[number] }> {
-		return new Iterator2Model(this.value, this.name, v => {
+	Select<C2 extends keyof E>(...c: C2[]): Iterator2<T, E, { [x in typeof c[number]]: Array<C2>[number] }> {
+		return new Iterator2(this.value, this.name, v => {
 			let x: Partial<{ [x in typeof c[number]]: Array<C2>[number] }> = {};
 			c.forEach(z => x = { ...x, [z]: v[z] });
 			return x as { [x in typeof c[number]]: Array<C2>[number] }
 		})
 	}
 
+	Map<X>(fun: (v: V) => X): Iterator2<T, E, X> {
+		return new Iterator2(this.value, this.name, (v) => fun(this.last_filter(v)))
+	}
+
 	Where(func: (_: E) => boolean) {
-		return new Iterator2Model(() => {
+		return new Iterator2(() => {
 			while (true) {
 				const val = this.value();
 				if (val == undefined || func(val)) {
@@ -91,10 +106,10 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 		}, this.name, this.last_filter)
 	}
 
-	Include<X extends keyof data_container, Y>(
+	Include<X extends keyof TestJoin[T] & keyof data_container & keyof TestJoin, Y>(
 		table_to_join: X,
-		fun: (v: Iterator2Model<X, data_container[X], data_container[X]>) => Iterator2Model<X, data_container[X], Y>
-	): Iterator2Model<T, E, { [_ in X]: Y[] } & V> {
+		fun: (v: Iterator2<X, data_container[X], data_container[X]>) => Iterator2<X, data_container[X], Y>
+	): Iterator2<T, E, { [_ in X]: Y[] } & V> {
 		const next = () => {
 			const next = this.value();
 			if (!next) {
@@ -103,36 +118,25 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 			const z = {
 				[table_to_join]: fun(new ListModel(table_to_join).iterModel().Where(p => {
 					const keys = joins[this.name][table_to_join];
-					return next && p && next[keys.right] == p[keys.left]
+					if (next && p) {
+						return next[keys["right"]] == p[keys["left"]]
+					}
+
 				})).toList(),
 				...next
 			}
 			return z
 		}
-		return new Iterator2Model(next, this.name, (current) => {
+		return new Iterator2(next, this.name, (current) => {
 			let basic = this.last_filter(current);
-			console.log(basic)
 			let final = { [table_to_join]: current[table_to_join], ...basic };
-			console.log(final)
 			let final2 = final as V & { [_ in X] }
-			console.log(final2)
 			return final2;
 		})
 	}
 
-	forEach = (func: (_: V) => void) => {
-		while (true) {
-			const next = this.value();
-			if (next) {
-				const v = this.last_filter(next);
-				func(v);
-			} else {
-				break;
-			}
-		}
-	};
-	inspect = (func: (_: E) => void) =>
-		new Iterator2Model(() => {
+	Inspect = (func: (_: E) => void) =>
+		new Iterator2(() => {
 			let obj = this.value();
 			if (obj == undefined) {
 				return undefined;
@@ -142,64 +146,18 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 			}
 		}, this.name, this.last_filter);
 
-	toList = (): Array<V> => {
-		let list: V[] = [];
+	forEach = (func: (_: V) => void) => {
 		while (true) {
-			const v = this.value();
-			if (v) {
-				let basic = this.last_filter(v);
-				list.push(basic)
+			const next = this.next();
+			if (next) {
+				func(next);
 			} else {
-				return list
+				break;
 			}
 		}
-	}
-}
-
-class List<T> {
-	value: [T];
-	at: number;
-	constructor(value: [T]) {
-		this.value = value;
-		this.at = 0;
-	}
-	next = () => {
-		let val = this.value[this.at];
-		this.at += 1;
-		return val;
 	};
-	iter = () => new Iterator2(this.next)
 
-}
-class Iterator2<T> {
-	value: () => T | null;
-
-	constructor(val: () => T | null) {
-		this.value = val;
-	}
-
-	next = () => this.value();
-
-	map = <T2>(func: (_: T) => T2) =>
-		new Iterator2(() => {
-			let obj = this.next();
-			if (obj == undefined) {
-				return undefined;
-			}
-			return func(obj);
-		});
-
-	filter = (func: (_: T) => boolean) =>
-		new Iterator2(() => {
-			while (true) {
-				const val = this.next();
-				if (val == undefined || func(val)) {
-					return val;
-				}
-			}
-		});
-
-	find = (func: (_: T) => boolean) => {
+	find = (func: (_: V) => boolean) => {
 		while (true) {
 			const obj = this.next();
 			if (obj == undefined) {
@@ -210,88 +168,43 @@ class Iterator2<T> {
 			}
 		}
 	};
-	inspect = (func: (_: T) => void) =>
-		new Iterator2(() => {
-			let obj = this.next();
-			if (obj == undefined) {
-				return undefined;
-			} else {
-				func(obj);
-				return obj;
-			}
-		});
-	forEach = (func: (_: T) => void) => {
+
+	next(): V | null {
+		const next = this.value();
+		if (next == undefined || next == null) {
+			return undefined
+		}
+		return this.last_filter(next)
+
+	}
+
+	toList = (): Array<V> => {
+		let list: V[] = [];
 		while (true) {
-			const next = this.next();
-			if (next) {
-				func(next);
+			const v = this.next()
+			//console.log(v)
+			if (v) {
+				list.push(v)
 			} else {
-				break;
+				return list
 			}
 		}
-	};
-	Select = <C2 extends keyof T>(
-		...c: Array<C2>
-	): Iterator2<Pick<T, typeof c[number]>> => new Iterator2(this.next);
-
-    /*
-    GroupBy = <C2 extends keyof T>(
-        ...c: Array<C2>
-    ): Iterator2<{ key: Pick<T, typeof c[number]>; value: List<T> }> => {
-        const items: Array<{
-            key: Pick<T, typeof c[number]>;
-            value: Array<T>;
-        }> = [];
-        while (true) {
-            const obj = this.next();
-            if (obj == undefined) {
-                return new List(
-                    items.map(v => ({ key: v.key, value: new List(v.value) }))
-                ).iter();
-            }
-            const index = items.findIndex(v =>
-                c.every(key => obj[key] == v.key[key])
-            );
-            if (index == -1) {
-                items.push({ key: obj, value: [obj] });
-            } else {
-                items[index].value.push(obj);
-            }
-        }
-    };*/
+	}
 }
 
-//console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
-new ListModel("courses")
+console.log(new ListModel("courses")
 	.iterModel()
-	.Select("name")
+	.Select("name", "name")
 	.Include(
-		"students",
-		(v) => v.Where(v => v.name == "a").Select("name")
+		"courseStudent",
+		(v) => v.Include("students", (v) => v)//.Select("course")
 	)
-	.forEach(
-		v => console.log(v.students)
-	)
-
-
-/*
-new List([
-    { userId: 1, listId: 1, name: "string1" },
-    { userId: 1, listId: 2, name: "string2" },
-    { userId: 2, listId: 2, name: "string3" },
-    { userId: 1, listId: 1, name: "string4" },
-    { userId: 1, listId: 2, name: "string5" },
-    { userId: 2, listId: 2, name: "string6" },
-])
-    .iter()
-    .GroupBy("userId", "listId")
-    .map((v) => ({
-        nice: "awesome",
-        listId: v.key.listId,
-        val: v.value
-    }))
-    .Select("nice")
-    .forEach((v) => {
-        console.log(v.nice)
-    })
-*/
+	.Map(v => ({ ...v, name: v.name + " awesome" }))
+	.find(v => v.courseStudent.some(x => x.student_id = 1)))
+	/*.forEach(
+v => {
+console.log("coursename", v.name)
+console.log(v.courseStudent)
+v.courseStudent.forEach(v => console.log(v))
+}
+)*/
