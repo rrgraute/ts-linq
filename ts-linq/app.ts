@@ -48,6 +48,16 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 	constructor(val: () => E | null) {
 		this.value = val;
 	}
+
+	where = (func: (_: E) => boolean) =>
+		new Iterator2Model(() => {
+			while(true) {
+				const val = this.value();
+				if (val == undefined || func(val)) {
+					return val;
+				}
+			}
+		})
 }
 
 class List<T> {
@@ -155,7 +165,7 @@ class Iterator2<T> {
     };*/
 }
 
-new ListModel("courses").iter().forEach(console.debug)
+console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
 
 /*
 new List([
