@@ -7,8 +7,8 @@ type test<T extends keyof data_container & string, E extends data_container[T]> 
 
 
 const data = {
-	"courses": [{ name: "awesome", id: 2 }],
-	"students": [{ name: "ryan", course: 2 }]
+	"courses": [{ name: "awesome", id: 2 }, { name: "test2", id: 2 }, { name: "awesome2", id: 1 }],
+	"students": [{ name: "ryan", course: 2 }, { name: "casper", course: 2 }]
 }
 
 
@@ -85,11 +85,13 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 	) {
 		const next = () => {
 			const next = this.value();
-
+			if (!next) {
+				return undefined
+			}
 			const z = {
 				[table_to_join]: fun(new ListModel(table_to_join).iterModel().where(p => {
 					const keys = joins[this.name][table_to_join];
-					return next[keys.left] == p[keys.right]
+					return next && p && next[keys.right] == p[keys.left]
 				})).toList(),
 				...next
 			}
@@ -101,7 +103,7 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 	toList = (): Array<E> => {
 		let list: E[] = [];
 		while (true) {
-			let v = this.value();
+			const v = this.value();
 			if (v) {
 				list.push(v)
 			} else {
@@ -217,7 +219,7 @@ class Iterator2<T> {
 }
 
 //console.log(new ListModel("courses").iterModel().where((c) => c.name == "geert").value())
-console.debug(new ListModel("courses").iterModel().Include("students", (v) => v).value())
+new ListModel("courses").iterModel().Include("students", (v) => v).toList().forEach(v => console.log(v))
 
 
 /*
