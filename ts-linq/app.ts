@@ -68,9 +68,11 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 		this.value = val;
 		this.name = name;
 	}
+	// @ts-ignore
+	Select<C2 extends keyof E>(...c: Array<C2>): Iterator2Model<T, Pick<E, typeof c[number]>> { return new Iterator2Model(this.value, this.name) }
 
-	where = (func: (_: E) => boolean) =>
-		new Iterator2Model(() => {
+	Where(func: (_: E) => boolean) {
+		return new Iterator2Model(() => {
 			while (true) {
 				const val = this.value();
 				if (val == undefined || func(val)) {
@@ -78,6 +80,7 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 				}
 			}
 		}, this.name)
+	}
 
 	Include<X extends keyof data_container>(
 		table_to_join: X,
@@ -89,7 +92,7 @@ class Iterator2Model<T extends keyof data_container, E extends data_container[T]
 				return undefined
 			}
 			const z = {
-				[table_to_join]: fun(new ListModel(table_to_join).iterModel().where(p => {
+				[table_to_join]: fun(new ListModel(table_to_join).iterModel().Where(p => {
 					const keys = joins[this.name][table_to_join];
 					return next && p && next[keys.right] == p[keys.left]
 				})).toList(),
