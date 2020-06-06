@@ -83,11 +83,12 @@ class Iterator2<T extends keyof data_container & keyof TestJoin, E extends data_
 		this.last_filter = display;
 	}
 
-	Select<C2 extends keyof E>(...c: C2[]): Iterator2<T, E, { [x in typeof c[number]]: Array<C2>[number] }> {
+	Select<C2 extends keyof V>(...c: C2[]): Iterator2<T, E, Pick<V, C2>> {
 		return new Iterator2(this.value, this.name, v => {
-			let x: Partial<{ [x in typeof c[number]]: Array<C2>[number] }> = {};
-			c.forEach(z => x = { ...x, [z]: v[z] });
-			return x as { [x in typeof c[number]]: Array<C2>[number] }
+			let p = this.last_filter(v)
+			let x: Partial<Pick<V, C2>> = {};
+			c.forEach(z => x = { ...x, [z]: p[z] });
+			return x as Pick<V, C2>
 		})
 	}
 
@@ -191,17 +192,21 @@ class Iterator2<T extends keyof data_container & keyof TestJoin, E extends data_
 		}
 	}
 }
-
-console.log(new ListModel("courses")
-	.iterModel()
-	.Select("name", "name")
-	.Include(
-		"courseStudent",
-		(v) => v.Include("students", (v) => v)//.Select("course")
-	)
-	.Map(v => ({ ...v, name: v.name + " awesome" }))
-	.find(v => v.courseStudent.some(x => x.student_id = 1)))
-	/*.forEach(
+console.log(
+	new ListModel("courses")
+		.iterModel()
+		.Select("id")
+		.Include(
+			"courseStudent",
+			(v) => v.Include("students", (v) => v)//.Select("course")
+		)
+		.Select("courseStudent")
+		.Map(v => ({ ...v, example: "nice?" }))
+		.Select("example")
+		.find(v => v.example == "nice?"))
+	//.forEach(console.log)
+	//.find(v => v.courseStudent.some(x => x.student_id = 1)))
+/*.forEach(
 v => {
 console.log("coursename", v.name)
 console.log(v.courseStudent)
