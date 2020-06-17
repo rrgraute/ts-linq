@@ -6,7 +6,7 @@
   "scripts": {
     "start": "./node_modules/.bin/ts-node app.ts"
   },
-  "dependencies": {
+  "devDependencies": {
     "node-ts": "^5.0.3",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3"

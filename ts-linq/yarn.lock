@@ -9,12 +9,12 @@
     "@types/node" "^10.0.3"
 
 "@types/node@^10.0.3":
-  version "10.17.21"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.21.tgz#c00e9603399126925806bed2d9a1e37da506965e"
+  version "10.17.26"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.26.tgz#a8a119960bff16b823be4c617da028570779bcfd"
 
 "@types/node@^13.9.8":
-  version "13.13.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.5.tgz#96ec3b0afafd64a4ccea9107b75bf8489f0e5765"
+  version "13.13.12"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.12.tgz#9c72e865380a7dc99999ea0ef20fc9635b503d20"
 
 arg@^4.1.0:
   version "4.1.3"
@@ -33,8 +33,8 @@ make-error@^1.1.1:
   resolved "https://registry.yarnpkg.com/make-error/-/make-error-1.3.6.tgz#2eb2e37ea9b67c4891f684a1394799af484cf7a2"
 
 node-ts@^5.0.3:
-  version "5.0.5"
-  resolved "https://registry.yarnpkg.com/node-ts/-/node-ts-5.0.5.tgz#2075bd80d50a195045aed0dade578ca16e410b1b"
+  version "5.0.6"
+  resolved "https://registry.yarnpkg.com/node-ts/-/node-ts-5.0.6.tgz#7e4304d45d957e2699de46b74519f59a41aea565"
   dependencies:
     "@rauschma/stringio" "^1.4.0"
     "@types/node" "^13.9.8"
@@ -51,8 +51,8 @@ source-map@^0.6.0:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
 
 ts-node@^8.5.4:
-  version "8.10.1"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.10.1.tgz#77da0366ff8afbe733596361d2df9a60fc9c9bd3"
+  version "8.10.2"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.10.2.tgz#eee03764633b1234ddd37f8db9ec10b75ec7fb8d"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"
@@ -61,8 +61,8 @@ ts-node@^8.5.4:
     yn "3.1.1"
 
 typescript@^3.7.3:
-  version "3.8.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.8.3.tgz#409eb8544ea0335711205869ec458ab109ee1061"
+  version "3.9.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.5.tgz#586f0dba300cde8be52dd1ac4f7e1009c1b13f36"
 
 yn@3.1.1:
   version "3.1.1"
