@@ -4,11 +4,11 @@
     "module": "commonjs",
     "target": "es6",
     "lib": [
-      "es6",
+      "es2019",
       "DOM"
     ],
     "sourceMap": true,
-    "outDir": "out"
+    "outDir": "out",
   },
   "exclude": [
     "node_modules"

@@ -13,10 +13,38 @@ export const none = (): { kind: "none" } => ({ kind: "none" })
 export type data_container = { "courses": course, "students": student, "courseStudent": courseStudent, "grades": grade }
 
 
-const courses: course[] = [{ name: "Software Engineering", id: 2 }, { name: "Analyse", id: 3 }, { name: "SLC", id: 1 }]
-const students: student[] = [{ name: "Ryan", surname: "Graute", id: 1 }, { name: "Casper", surname: "de Keizer", id: 2 }, { name: "Tim", surname: "Dallau", id: 3 }]
-const courseStudent: courseStudent[] = [{ student_id: 2, course_id: 2 }, { student_id: 3, course_id: 1 }, { student_id: 1, course_id: 3 }, { student_id: 3, course_id: 2 }]
-const grades: grade[] = [{ id: 1, course_id: 2, student_id: 3, grade: 8 }]
+const courses: course[] = [
+	{ name: "Software Engineering", id: 2 },
+	{ name: "Analyse", id: 3 },
+	{ name: "SLC", id: 1 }
+]
+
+const students: student[] = [
+	{ name: "Ryan", surname: "Graute", id: 1 },
+	{ name: "Casper", surname: "de Keizer", id: 2 },
+	{ name: "Tim", surname: "Dallau", id: 3 },
+	{ name: "Aap", surname: "Smit", id: 4 }
+]
+
+const courseStudent: courseStudent[] = [
+	{ student_id: 2, course_id: 2 },
+	{ student_id: 3, course_id: 1 },
+	{ student_id: 1, course_id: 3 },
+	{ student_id: 1, course_id: 2 },
+	{ student_id: 1, course_id: 1 },
+	{ student_id: 3, course_id: 2 },
+	{ student_id: 4, course_id: 1 },
+	{ student_id: 4, course_id: 2 },
+	{ student_id: 4, course_id: 3 }
+]
+
+const grades: grade[] = [
+	{ id: 1, course_id: 2, student_id: 1, grade: 9 },
+	{ id: 2, course_id: 2, student_id: 2, grade: 3 },
+	{ id: 2, course_id: 2, student_id: 2, grade: 1 },
+	{ id: 3, course_id: 2, student_id: 3, grade: 8 },
+	{ id: 4, course_id: 1, student_id: 4, grade: 6 }
+]
 
 //this object holds all the data.
 export const data = {
@@ -43,8 +71,14 @@ export type JoinTable = {
 		"courseStudent": { left: "student_id", right: "id" },
 		"grades": { left: "student_id", right: "id" }
 	},
-	"courseStudent": { "students": { left: "id", right: "student_id" } },
-	"grades": { "students": { left: "id", right: "student_id" } },
+	"courseStudent": {
+		"students": { left: "id", right: "student_id" },
+		"courses": { left: "id", right: "course_id" }
+	},
+	"grades": {
+		"students": { left: "id", right: "student_id" },
+		"courses": { left: "id", right: "course_id" }
+	},
 	"courses": {
 		"courseStudent": { left: "course_id", right: "id" },
 		"grades": { left: "course_id", right: "id" }
@@ -58,9 +92,13 @@ export const joins: JoinTable & Joins = {
 		"grades": { left: "student_id", right: "id" }
 	},
 	"courseStudent": {
-		"students": { left: "id", right: "student_id" }
+		"students": { left: "id", right: "student_id" },
+		"courses": { left: "id", right: "course_id" }
 	},
-	"grades": { "students": { left: "id", right: "student_id" } },
+	"grades": {
+		"students": { left: "id", right: "student_id" },
+		"courses": { left: "id", right: "course_id" }
+	},
 	"courses": {
 		"courseStudent": { left: "course_id", right: "id" },
 		"grades": { left: "course_id", right: "id" }

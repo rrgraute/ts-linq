@@ -7,8 +7,7 @@
     "start": "./node_modules/.bin/ts-node app.ts"
   },
   "devDependencies": {
-    "node-ts": "^5.0.3",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.3"
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
   }
 }
